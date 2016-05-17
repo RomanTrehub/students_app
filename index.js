@@ -44,9 +44,8 @@ $(function() {
 	}
 
 	$('.student-listing-container').on("click", ".btn-default", function(){
-		$studentDataContainer.show;
 		$studentListingContainer.slideUp(300, function(){
-			$studentDataContainer.slideDown(300);
+		$studentDataContainer.slideDown(300);
 		});
 		$.get({
 		url: "https://spalah-js-students.herokuapp.com/students/" + $(this).parents("tr").attr("id"),
@@ -56,5 +55,20 @@ $(function() {
 			studentForm(students.data);
 		}
 	})
+	});
+	$('.student-data-container').on("click", ".btn-default:last", function(){
+		$studentDataContainer.slideUp(300, function(){
+		$studentListingContainer.slideDown(300);
+		});
+	});
+	$('.student-listing-container').on("click", ".btn-success", function(){
+		$studentListingContainer.slideUp(300, function(){
+		$studentFormContainer.slideDown(300);
+		});
+	});
+	$('form').on("click", ".btn-default:last", function(){
+		$studentFormContainer.slideUp(300, function(){
+		$studentListingContainer.slideDown(300);
+		});
 	});
 });
