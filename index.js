@@ -131,7 +131,9 @@ $(function() {
         $studentListingContainer.slideDown(300);
         });
 		clearForm();
+		$('form .form-control').css('box-shadow', 'none');
 		$listError.hide();
+		
     });
 
 	// Сабмит обработчик
@@ -189,6 +191,7 @@ $(function() {
 
                 },
             });
+		$('form .form-control').css('box-shadow', 'none');	
         event.preventDefault();
     });
 	// Кнопка Delete
@@ -271,6 +274,7 @@ $(function() {
 				$(this).css("box-shadow", "0 0 5px rgba(255, 0, 0, 1)");
 			}else{
 				$(this).css("box-shadow", "0 0 5px rgba(0, 255, 0, 1)");
-			} 	
+			}
+			//if ()
 		})
 });
