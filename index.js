@@ -1,24 +1,41 @@
-'use strict';
+﻿'use strict';
 $(function() {
     var $studentListingContainer = $('.student-listing-container').parent();
     var $studentDataContainer = $('.student-data-container').parent();
     var $studentFormContainer = $('.student-form-container').parent();
     var $studentTableBody = $('tbody');
     var $studentSelect = $('.form-control.student-age');
+	var $alertSuccess = $(".student-listing-container .alert-success");
+	var $alertUpdate = $(".student-data-container .alert-success");
+	var $listError = $(".alert-danger");
+	$listError.hide();
+	$alertSuccess.hide();
+	$alertUpdate.hide();
     $studentDataContainer.hide();
     $studentFormContainer.hide();
     var $cloneCourse  = $("input.student-course:first").parent().clone();
     var checkedEdit = false;
     var $studentId = "";
     var $checkedShow = false;
-
+	for (var i = 1; i < 100; i++){
+        $studentSelect.append($('<option>').html(i));
+    }
+	
+	function clearForm(){
+        $("form input").val('');
+        $("form select").val("");
+		for (var i = $('input.student-course').length; i > 1; i--){
+			$('input.student-course').eq(i).parent().remove();
+		}		
+	}
+	$('list-group-item:first').hide();
     $('.add-course').click(function(){
         var $thisCourse = $cloneCourse.clone();
         $thisCourse.insertBefore($(".form-group.has-error"));
         $thisCourse.find("label").html("Course " + $(".form-control.student-course").length + ":");
         event.preventDefault();
     });
-
+// Удаление курса
     $("form").on("click", ".remove-course", function(){
         if($('input.student-course').length < 3){
             event.preventDefault();
@@ -58,37 +75,39 @@ $(function() {
         });
     }
         updateListnigContainer();
-    function studentForm(student){
-        $(".course-group").remove();
-        var $studentNameSpan = $('.student-full-name').html(student.first_name+" " + student.last_name);
-        $('span.student-age').html(student.age);
-        if(student.at_university === true){
-        $('span.student-at-university').html('Yes');
-        }else $('span.student-at-university').html('No');
-        $.each(student.courses, function(index, course){
-            $('.student-data-group:last').append($("<div>").addClass("course-group")
-            .append($("<b>").html("Course" + (index + 1) + ":"))
-            .append($("<span>").addClass("student-course").html(course)));
+		
+    function studentForm(){
+       $.get({
+        url: "https://spalah-js-students.herokuapp.com/students/" + $studentId,
+            contentType: "aplication/json",
+            dataType:"json",
+            success: function (students){
+				$(".course-group").remove();
+				var $studentNameSpan = $('.student-full-name').html(students.data.first_name+" " + 	students.data.last_name);
+				$('span.student-age').html(students.data.age);
+				if(students.data.at_university === true){
+					$('span.student-at-university').html('Yes');
+				}else $('span.student-at-university').html('No');
+				$.each(students.data.courses, function(index, course){
+					$('.student-data-group:last').append($("<div>").addClass("course-group")
+					.append($("<b>").html("Course" + (index + 1) + ":"))
+					.append($("<span>").addClass("student-course").html(course)));
         });
-
+           }
+      })		
     }
-
+// Кнопка Show
     $('.student-listing-container').on("click", ".btn-default", function(){
             $checkedShow = true;
             $studentId = $(this).parents("tr").data("id");
             $studentListingContainer.slideUp(300, function(){
             $studentDataContainer.slideDown(300);
             });
-            $.get({
-            url: "https://spalah-js-students.herokuapp.com/students/" + $studentId,
-            contentType: "aplication/json",
-            dataType:"json",
-            success: function (students){
-                studentForm(students.data);
-            }
-        })
+			studentForm();
     });
     $('.student-data-container').on("click", ".btn-default:last", function(){
+		$studentId = "";
+		checkedEdit = false;		
         $studentTableBody.empty();
         updateListnigContainer();
         $checkedShow = false;
@@ -96,28 +115,26 @@ $(function() {
         $studentListingContainer.slideDown(300);
         });
     });
+		// Кнопка Add-student
     $('.student-listing-container').on("click", ".btn-success", function(){
         $studentListingContainer.slideUp(300, function(){
         $studentFormContainer.slideDown(300);
         });
+		clearForm();
+		$listError.hide();
     });
+	
     $('form').on("click", "a.btn-default", function(){
         $studentTableBody.empty();
         updateListnigContainer();
         $studentFormContainer.slideUp(300, function(){
         $studentListingContainer.slideDown(300);
         });
-        $("form input").val('');
-        $("form select").val("");
-		for (var i = $('input.student-course').length; i > 1; i--){
-			$('input.student-course').eq(i).parent().remove();
-		}
-		
-
+		clearForm();
+		$listError.hide();
     });
-       for (var i = 1; i < 100; i++){
-        $studentSelect.append($('<option>').html(i));
-    }
+
+	// Сабмит обработчик
     $('form').submit(function(event) {
         var $courses = [];
         var editProof;
@@ -143,6 +160,7 @@ $(function() {
                 type: editProof,
                 dataType:"json",
                 success: function (data){
+					$('.list-group-item').remove();
                     if (data.errors) {
                         $('.alert-danger').fadeIn(500);
                         $.each(data.errors, function(index, error){
@@ -150,24 +168,30 @@ $(function() {
                              $('ul').append($error_li);
                         });
                     }else{
-                        if(checkedEdit){                         
+                        if(checkedEdit){   
+							studentForm();
+							$checkedShow = true;
 							$studentFormContainer.slideUp(300, function(){
-							$studentDataContainer.slideDown(300);
+								$studentDataContainer.slideDown(300,function(){
+									$alertUpdate.fadeIn(600).delay(2000).fadeOut(600);
+								});
                             });
-                        }else{ 
+                        }else{ 						
                             $studentTableBody.empty();
                             updateListnigContainer();
                             $studentFormContainer.slideUp(300, function(){
-                                $studentListingContainer.slideDown(300);
+                                $studentListingContainer.slideDown(300, function(){
+									$alertSuccess.fadeIn(600).delay(2000).fadeOut(600);
+								});
                             });
                          }
                     }
-                    $studentId = "";
-                    checkedEdit = false;
+
                 },
             });
         event.preventDefault();
     });
+	// Кнопка Delete
     $('.student-listing-container').on("click",".btn-danger", function(){
        var questDelete =  confirm("Вы действително хотите удалить сутдента?");
        if (questDelete){
@@ -184,15 +208,15 @@ $(function() {
         }   
         event.preventDefault();
     });
+	// Кнопка Edit
     $(document).on("click",".btn-primary", function(event){
+		checkedEdit = true;
         if (!$checkedShow){
              $studentId = $(this).parents("tr").data("id");
-             checkedEdit = true;
              $studentListingContainer.slideUp(300, function(){
                  $studentFormContainer.slideDown(300);
              });
         }else{
-            checkedEdit = true;
             $studentDataContainer.slideUp(300, function(){
                  $studentFormContainer.slideDown(300);
              });
@@ -219,7 +243,34 @@ $(function() {
              })
             }
         })
-            $checkedShow = false;
+
         event.preventDefault();
     });
+			// Проверка на Ошибки при вводе
+		function checkInputName(){
+			if($(this).val().length < 3 || !/^[A-Z][a-z]*$/.test($(this).val())){
+				$(this).css("box-shadow", "0 0 5px rgba(255, 0, 0, 1)");
+			}else{
+				$(this).css("box-shadow", "0 0 5px rgba(0, 255, 0, 1)");
+			} 	
+		}			
+			
+		$(".first-name").keyup(checkInputName);
+		$(".last-name").keyup(checkInputName);
+		
+		// Проверка курсов
+		$("form").on("keyup", "input.student-course", function(){
+			if($(this).val().length < 3 || !/^[A-Za-z\s]*$/.test($(this).val())){
+				$(this).css("box-shadow", "0 0 5px rgba(255, 0, 0, 1)");
+			}else{
+				$(this).css("box-shadow", "0 0 5px rgba(0, 255, 0, 1)");
+			} 				
+		})
+		$("select.student-age").change(function(){
+			if (!($(this).val() >= 1) && !($(this).val() <= 99)){
+				$(this).css("box-shadow", "0 0 5px rgba(255, 0, 0, 1)");
+			}else{
+				$(this).css("box-shadow", "0 0 5px rgba(0, 255, 0, 1)");
+			} 	
+		})
 });
